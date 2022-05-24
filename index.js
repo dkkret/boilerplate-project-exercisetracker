@@ -87,17 +87,39 @@ app.post('/api/users/:_id/exercises', (req, res) => {
       })
     }
   })
-
-
-
-  // res.json({
-  //   _id : _id,
-  //   description: description,
-  //   duration: duration,
-  //   date: date
-  // })
 })
 
+//GET  /api/users/:_id/logs
+app.get('/api/users/:_id/logs', (req, res) => {
+  const _id = req.params._id
+  User.findById(_id, (err, userData) => {
+    if(err) {res.json({error: `can't find user _id:${_id}`})}
+    else{
+      Exercise.find({user_id: _id}, '-_id description duration date').exec((err, data) => {
+        if(err) {res.json({error: 'error during loading users exercise logs'})}
+        else{
+          data.forEach((element, index) => {
+            data[index] = {
+              description: element.description,
+              duration: element.duration,
+              date: new Date(element.date).toDateString()
+            }
+          });
+
+          let resobj = {
+            username: userData.username,
+            count: data.length,
+            _id: userData._id,
+            log: data
+          }
+
+          res.json(resobj)
+        }
+      })
+    }
+  })
+
+})
 
 
 const listener = app.listen(process.env.PORT || 3000, () => {
