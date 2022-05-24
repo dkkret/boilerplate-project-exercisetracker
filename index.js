@@ -8,7 +8,7 @@ const { default: mongoose } = require('mongoose')
 const {Schema} = mongoose
 
 const userSchema = new Schema({
-  name: {type: String, unique: true}
+  username: {type: String, unique: true}
 },
 {versionKey: false})
 const User = mongoose.model('User', userSchema)
@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
 //POST /api/users
 app.post('/api/users', (req, res) => {
   const userName = req.body.username
-  let user = new User({name: userName})
+  let user = new User({username: userName})
   user.save((err, data) => {
     if(err) { res.json({error: 'error during save user data'})}
     else {
