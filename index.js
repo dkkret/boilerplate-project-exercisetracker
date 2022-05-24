@@ -12,6 +12,16 @@ const userSchema = new Schema({
 },
 {versionKey: false})
 const User = mongoose.model('User', userSchema)
+
+const exerciseSchema = new Schema({
+  description: String,
+  duration: Number,
+  date: Date,
+  user_id: String
+},
+{versionKey: false});
+const Exercise = mongoose.model('Exercise', exerciseSchema)
+
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 
@@ -52,12 +62,40 @@ app.post('/api/users/:_id/exercises', (req, res) => {
   const duration = req.body.duration
   const date = req.body.date
 
-  res.json({
-    _id : _id,
+  let exercise = new Exercise({
+    user_id: _id,
     description: description,
     duration: duration,
-    date: date
+    date: new Date(date).toDateString()
   })
+
+  User.findById(_id, (err, userData) => {
+    if(err) {res.json({error: `can't find user _id:${_id}`})}
+    else{
+      exercise.save((err, exerciseData) => {
+        if(err) {res.json({error: 'error during saving exercise'})}
+        else {
+          res.json({
+            _id: userData._id,
+            username: userData.username,
+            date: new Date(exerciseData.date).toDateString(),
+            duration: exerciseData.duration,
+            description: exerciseData.description
+          });
+          //{"_id":"628d3eaa7a0fcc06ac75b076","username":"asaSss22","date":"Mon Dec 12 2022","duration":12,"description":"wwww"}
+        }
+      })
+    }
+  })
+
+
+
+  // res.json({
+  //   _id : _id,
+  //   description: description,
+  //   duration: duration,
+  //   date: date
+  // })
 })
 
 
