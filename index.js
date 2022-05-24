@@ -113,9 +113,10 @@ app.get('/api/users/:_id/logs', (req, res) => {
           });
 
           let resobj = {
+            _id: userData._id,
             username: userData.username,
             count: data.length,
-            _id: userData._id,
+            
             log: data
           }
 
