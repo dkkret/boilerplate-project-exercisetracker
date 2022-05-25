@@ -66,18 +66,28 @@ app.get('/api/users', (req, res) => {
 //POST /api/users/:_id/exercises
 app.post('/api/users/:_id/exercises', (req, res) => {
   const _id = req.params._id
-  const description = req.body.description
-  const duration = req.body.duration
-  const date = req.body.date
+  const description = String(req.body.description)
+  const duration = Number(req.body.duration)
+  const date2 = String(req.body.date).toString()
+
+  let dd;
+  if(date2 === "" || date2 === 'undefined') {
+    dd = new Date()
+  }
+  else {
+    dd = new Date(date2.toString())
+  }
 
   let exercise = new Exercise({
     user_id: _id,
     description: description,
     duration: duration,
-    date: (date === "" ) ? new Date().toDateString() : new Date(date).toDateString()
+    date: (date2 === "" || date2 === 'undefined') ? new Date() : new Date(date2.toString())
   })
+
   console.log('-----BeginInputExercse')
-  console.log(date === '')
+  console.log(date2)
+  console.log(exercise.date)
   console.log(req.body)
   console.log(req.params)
   console.log(_id)
@@ -87,7 +97,7 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     if(err) {console.log(`#7can't find user _id:${_id}`); res.json({error: `can't find user _id:${_id}`})}
     else{
       exercise.save((err, exerciseData) => {
-        if(err) {console.log('error during saving exercise');res.json({error: 'error during saving exercise'})}
+        if(err) {console.log('error during saving exercise');console.log(err); res.json({error: 'error during saving exercise'})}
         else {
           
           const respObj = {
