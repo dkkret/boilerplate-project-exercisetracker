@@ -8,14 +8,14 @@ const { default: mongoose } = require('mongoose')
 const {Schema} = mongoose
 
 const userSchema = new Schema({
-  username: {type: String, unique: true}
+  username: {type: String, required: true}
 },
 {versionKey: false})
 const User = mongoose.model('User', userSchema)
 
 const exerciseSchema = new Schema({
-  description: String,
-  duration: Number,
+  description: {type: String, required: true},
+  duration: {type: Number, required: true},
   date: Date,
   user_id: String
 },
@@ -44,8 +44,9 @@ app.post('/api/users', (req, res) => {
   const userName = req.body.username
   let user = new User({username: userName})
   user.save((err, data) => {
-    if(err) { res.json({error: 'error during save user data'})}
+    if(err) {console.log('error during save user data'); res.json({error: 'error during save user data'})}
     else {
+      console.log(data)
       res.json(data)
     }
   })
@@ -54,8 +55,9 @@ app.post('/api/users', (req, res) => {
 //GET /api/users
 app.get('/api/users', (req, res) => {
   User.find().exec((err, data) => {
-    if(err) { res.json({error: 'error during loading users data'})}
+    if(err) {console.log('error create user'); res.json({error: 'error during loading users data'})}
     else {
+      //console.log(data)
       res.json(data)
     }
   })
@@ -72,22 +74,31 @@ app.post('/api/users/:_id/exercises', (req, res) => {
     user_id: _id,
     description: description,
     duration: duration,
-    date: new Date(date).toDateString()
+    date: (date === "" ) ? new Date().toDateString() : new Date(date).toDateString()
   })
+  console.log('-----BeginInputExercse')
+  console.log(date === '')
+  console.log(req.body)
+  console.log(req.params)
+  console.log(_id)
+  console.log('-----EndnputExercise')
 
   User.findById(_id, (err, userData) => {
-    if(err) {res.json({error: `can't find user _id:${_id}`})}
+    if(err) {console.log(`#7can't find user _id:${_id}`); res.json({error: `can't find user _id:${_id}`})}
     else{
       exercise.save((err, exerciseData) => {
-        if(err) {res.json({error: 'error during saving exercise'})}
+        if(err) {console.log('error during saving exercise');res.json({error: 'error during saving exercise'})}
         else {
-          res.json({
+          
+          const respObj = {
             _id: userData._id,
             username: userData.username,
             date: new Date(exerciseData.date).toDateString(),
             duration: exerciseData.duration,
             description: exerciseData.description
-          });
+          }
+          console.log()
+          res.json(respObj);
           //{"_id":"628d3eaa7a0fcc06ac75b076","username":"asaSss22","date":"Mon Dec 12 2022","duration":12,"description":"wwww"}
         }
       })
@@ -98,28 +109,57 @@ app.post('/api/users/:_id/exercises', (req, res) => {
 //GET  /api/users/:_id/logs
 app.get('/api/users/:_id/logs', (req, res) => {
   const _id = req.params._id
+  const limit = req.query.limit
+  const from = req.query.from
+  const to = req.query.to
   User.findById(_id, (err, userData) => {
-    if(err) {res.json({error: `can't find user _id:${_id}`})}
+    if(err) {console.log(`#1${_id}`);res.json({error: `can't find user _id:${_id}`})}
     else{
-      Exercise.find({user_id: _id}, '-_id description duration date').exec((err, data) => {
-        if(err) {res.json({error: 'error during loading users exercise logs'})}
+    //   db.posts.find({ //query today up to tonight
+    //     created_on: {
+    //         $gte: new Date(2012, 7, 14), 
+    //         $lt: new Date(2012, 7, 15)
+    //     }
+    // })
+
+    let pred = {user_id: _id};
+    if(from !== undefined)
+    {
+      pred.date = {$gte: new Date(from).toDateString()}
+    }
+    if(to !== undefined)
+    {
+      pred.date = {$lte: new Date(to).toDateString()}
+    }
+    if(from !== undefined && to !== undefined) {
+      pred.date = {$gte: new Date(from).toDateString(), $lte: new Date(to).toDateString()}
+    }
+
+      Exercise.find(pred, '-_id description duration date').limit(limit).exec((err, data) => {
+        if(err) {console.log(`#2${_id}`);res.json({error: 'error during loading users exercise logs'})}
         else{
           data.forEach((element, index) => {
             data[index] = {
-              description: element.description,
-              duration: element.duration,
+              description: String(element.description),
+              duration: Number(element.duration),
               date: new Date(element.date).toDateString()
             }
           });
 
           let resobj = {
-            _id: userData._id,
-            username: userData.username,
-            count: data.length,
+            _id: String(userData._id),
+            username: String(userData.username),
+            count: Number(data.length),
             
             log: data
           }
-
+          console.log('--params')
+          console.log(limit)
+          console.log(from)
+          console.log(to)
+          console.log(pred)
+          console.log('--params')
+          console.log(resobj)
           res.json(resobj)
         }
       })
